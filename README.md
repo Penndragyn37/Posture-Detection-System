@@ -18,7 +18,7 @@ server GPU (Gemma 4 26B), and mobile NPU (Gemma 4 E4B) inference approaches.
 All three approaches exceed the 90% accuracy target on a 337-frame held-out
 synthetic test set. Gemma 4 26B is recommended for production deployment
 (best balance of accuracy, latency, and privacy). Full methodology, error
-analysis, and discussion are in the final report under `docs/final_report/`.
+analysis, and discussion are in the final report under `docs/05_final_report/`.
 
 ## Quick start
 
@@ -83,12 +83,13 @@ Gemma 4 inference setting are in
 ├── data/
 │   └── evaluation_logs/      Dev/test CSV logs for all three approaches + UAT logs (T2–T8)
 └── docs/
-    ├── proposal/              Capstone proposal
-    ├── schedule/              Project schedule (PDF + Gantt chart component)
-    ├── requirements/          SRS + requirements work packages (WP1.1, WP1.2)
-    ├── architecture/          Literature review, system architecture, FTA, FMEA (WP2.1–WP3.0)
-    ├── verification/          Data collection log, reliability test record, validation plan (WP4, WP5.0)
-    ├── final_report/          Final capstone report + annotated bibliography
+    ├── 00_proposal/           Capstone proposal
+    ├── 01_schedule/           Project schedule (PDF + Gantt chart component)
+    ├── 02_requirements/       SRS + requirements work packages (WP1.1, WP1.2)
+    ├── 03_architecture/       Literature review, system architecture, FTA, FMEA (WP2.1–WP3.0)
+    ├── 04_verification/       Data collection log, reliability test record, validation plan (WP4, WP5.0)
+    ├── 05_final_report/       Final capstone report + annotated bibliography
+    ├── SETUP.md               Application install/config/operation guide
     └── OLLAMA_TOGGLE_GUIDE.md Explanation and test procedure for every Gemma 4 inference toggle
 ```
 
@@ -99,7 +100,7 @@ a 10-second visual countdown with a cancel option. The `ADJUSTING` state is
 reachable only from `SIGNALING` — there is no direct code path from
 `MONITORING` to `ADJUSTING`. This is verified by reliability test T1 (code
 inspection) and traced to fault-tree minimum cut set MCS-1
-(`docs/architecture/WP2_3_Fault_Tree_Analysis.docx`).
+(`docs/03_architecture/WP2_3_Fault_Tree_Analysis.docx`).
 
 ## Scope
 

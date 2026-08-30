@@ -110,7 +110,7 @@ works fine.
 | Claude API | 0 GB (cloud) | auto | Highest accuracy in this project's benchmark; internet required, per-request cost |
 
 See the root README's results table and the final report
-(`docs/final_report/`) for the full accuracy/latency/cost tradeoff.
+(`docs/05_final_report/`) for the full accuracy/latency/cost tradeoff.
 
 ---
 
