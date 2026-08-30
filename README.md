@@ -48,7 +48,10 @@ export ANTHROPIC_API_KEY=sk-ant-...
 python run.py --approach claude_api
 ```
 
-Recommended Ollama environment variables and per-toggle explanations are in
+For hardware tuning notes, Ollama environment variables, the full
+`config.yaml` reference, UI controls, and the evaluation log CSV schema, see
+**[`docs/SETUP.md`](docs/SETUP.md)**. Per-toggle explanations for every
+Gemma 4 inference setting are in
 [`docs/OLLAMA_TOGGLE_GUIDE.md`](docs/OLLAMA_TOGGLE_GUIDE.md).
 
 ## Repository structure
