@@ -1,0 +1,29 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Runtime output (not the historical evaluation logs in data/evaluation_logs)
+logs/
+*.log
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Captured frames / local datasets (large binary, not for git)
+dataset/
+frames_*/
+
+# Secrets — never commit real credentials
+.env
+*.pem

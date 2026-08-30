@@ -1,0 +1,101 @@
+# ════════════════════════════════════════════════════════════════════════
+# Posture Detection System — Configuration
+# Tuned for: MacBook Pro M5 Pro, 48 GB unified memory
+#
+# Every setting in this file has a corresponding entry in
+# OLLAMA_TOGGLE_GUIDE.md explaining what it does, why it exists, and
+# how to test it on macOS with Ollama.
+# ════════════════════════════════════════════════════════════════════════
+
+# Hardware profile (M5 Pro 48 GB):
+#   Chip:       Apple M5 Pro (Fusion Architecture, dual-die)
+#   GPU:        Up to 20-core GPU with Neural Accelerator in each core
+#   Memory:     48 GB unified (shared CPU + GPU, no copy overhead)
+#   Bandwidth:  307 GB/s
+#   AI compute: 4x peak GPU compute vs M4 Pro
+#
+# Model recommendation for 48 GB M5 Pro:
+#   gemma4:26b  — primary choice. MoE model: ~15 GB loaded, plenty of headroom.
+#                 ~75 tok/s via llama.cpp/Metal; faster with Ollama MLX preview.
+#   gemma4:31b  — maximum quality. Dense 31B: ~22 GB loaded. Fits with 26 GB headroom.
+#                 NOTE: Ollama 0.19 has a known Flash Attention hang with gemma4:31b
+#                 on some prompts. Use OLLAMA_FLASH_ATTENTION=0 if you try this.
+#   claude_api  — available as PoC comparison at any time regardless of GPU state.
+
+approach: gemma4_server   # gemma4_server | gemma4_mobile | claude_api
+
+# ── Camera ─────────────────────────────────────────────────────────────
+camera:
+  device_id: 0        # 0 = built-in MacBook camera; try 1 for external webcam
+  width: 1280
+  height: 720
+
+# ── Sampling rate ──────────────────────────────────────────────────────
+sampling:
+  fps: 1              # 1 fps is enough for desk posture; increase to 2 on fast hardware
+                       # NOTE: ignored in --images mode, which advances only after
+                       # each image finishes inference (see image_player.py)
+
+# ── Intent detection state machine ────────────────────────────────────
+intent:
+  threshold_frames: 5       # 5 consecutive frames (5 seconds) to confirm posture change
+  cooldown_seconds: 60      # lock-out after every adjustment
+  countdown_seconds: 10     # visual countdown before adjustment fires
+  confidence_min: 0.70      # frames below this neither increment nor reset counter
+
+# ── Gemma 4 (local, via Ollama) ────────────────────────────────────────
+gemma4:
+  model: gemma4:26b         # swap to gemma4:31b for max quality, gemma4:e4b for mobile
+  ollama_host: http://localhost:11434
+  timeout: 8                # seconds; M5 Pro is fast, 8s is generous
+
+  # --- Inference behaviour toggles ---
+  # See OLLAMA_TOGGLE_GUIDE.md for how to test each of these independently.
+
+  force_json: true          # Adds "format": "json" to the Ollama request.
+                             # Forces the model to emit syntactically valid JSON.
+                             # Set false to see raw unconstrained model output
+                             # (useful for debugging prompt quality, not for
+                             # production — JSON parsing will likely fail).
+
+  think: false               # Adds "think": false to the request, asking Ollama
+                             # to disable the model's chain-of-thought reasoning
+                             # mode. NOT reliably respected by all Ollama versions
+                             # (see use_prefill below for the actual fix).
+
+  use_prefill: true          # THE REAL FIX for the thinking-model empty-response
+                             # bug. Prefills the assistant turn with an opening
+                             # brace "{", forcing the model to continue directly
+                             # into JSON generation rather than entering its
+                             # thinking phase. Set false to reproduce the original
+                             # bug (useful for the report's "before/after" comparison).
+
+  temperature: 0.1           # Lower = more deterministic classification.
+                             # Raise toward 0.5-1.0 to see reasoning variability.
+
+  num_predict: 200           # Max tokens generated per response. The JSON output
+                             # is short (~40 tokens); 200 leaves headroom for the
+                             # reasoning field without risking truncation.
+
+  image_tokens: 560          # 48 GB headroom allows 560 tokens (vs 280 minimum)
+                             # higher = better posture detail; lower = faster
+                             # (NOTE: not yet wired into the encoder; reserved
+                             # for future image-resolution tuning)
+
+# ── Claude API (cloud proof-of-concept) ───────────────────────────────
+claude_api:
+  model: claude-sonnet-4-6
+  max_tokens: 150
+  timeout: 10
+
+# ── Evaluation logging ─────────────────────────────────────────────────
+evaluation:
+  log_path: ./logs/
+  save_frames: false        # set true to save JPEG frames alongside CSV
+                             # (useful for visually auditing misclassifications,
+                             # but multiplies disk usage over a 270-frame benchmark run)
+
+# ── Web UI server ──────────────────────────────────────────────────────
+ui:
+  host: 0.0.0.0
+  port: 8080

@@ -1,0 +1,27 @@
+# PDSDA — Posture Detection System
+# Install:  pip install -r requirements.txt
+#
+# macOS notes:
+#   - Camera permissions: grant Terminal (or your IDE) camera access in
+#     System Settings > Privacy & Security > Camera before first run.
+#   - If opencv-python fails to install: brew install cmake pkg-config first.
+#   - Ollama on Apple Silicon uses Metal GPU (not CUDA) — works natively.
+
+# Core
+opencv-python>=4.8.0
+numpy>=1.24.0
+PyYAML>=6.0
+
+# Web UI and server
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+
+# Inference approaches
+anthropic>=0.25.0        # Claude API (PoC path)
+requests>=2.31.0         # Ollama REST API (Gemma 4 path)
+
+# System monitoring (evaluation logger)
+psutil>=5.9.0
+
+# Optional for macOS: LiteRT-LM for Gemma 4 E4B on iOS
+# Install separately per Google AI Edge docs for iOS/Android deployment.

@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDSDA — Posture Detection System</title>
+<style>
+  :root {
+    --bg:        #0F1923;
+    --surface:   #1A2633;
+    --surface2:  #22303F;
+    --border:    #2A3A4A;
+    --text:      #E8EEF4;
+    --muted:     #7B8FA1;
+    --teal:      #1D9E75;
+    --green:     #639922;
+    --amber:     #BA7517;
+    --blue:      #185FA5;
+    --purple:    #534AB7;
+    --red:       #A32D2D;
+    --gray:      #5F5E5A;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font);
+         font-size: 14px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Header */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border);
+             padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  .header-title { font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  .header-sub { font-size: 12px; color: var(--muted); }
+  .header-spacer { flex: 1; }
+  .approach-select { background: var(--surface2); border: 1px solid var(--border);
+                      color: var(--text); padding: 5px 10px; border-radius: 6px;
+                      font-size: 13px; cursor: pointer; }
+  .btn-run { background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+              padding: 5px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+              transition: background .15s; }
+  .btn-run:hover { background: var(--surface); }
+  .btn-run.paused { border-color: var(--teal); color: var(--teal); }
+  .log-badge { font-size: 11px; color: var(--muted); padding: 4px 10px;
+               background: var(--surface2); border-radius: 6px; border: 1px solid var(--border); }
+  .settings-panel { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .settings-title { font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase;
+                    letter-spacing: .07em; margin-bottom: 8px; }
+  .host-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .host-input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+                padding: 5px 8px; border-radius: 5px; font-size: 12px; font-family: monospace; }
+  .host-input:focus { outline: none; border-color: var(--blue); }
+  .btn-test { background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+              padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .btn-test:hover { background: var(--surface); }
+  .btn-test.ok   { border-color: var(--teal); color: var(--teal); }
+  .btn-test.fail { border-color: #A32D2D; color: #f09595; }
+  .host-models { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .host-hint { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .img-src-row { display: none; background: var(--surface); border-bottom: 1px solid var(--border);
+                  padding: 8px 16px; gap: 6px; align-items: center; }
+  .img-src-row.open { display: flex; }
+  .img-src-input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+                   padding: 5px 8px; border-radius: 5px; font-size: 12px; font-family: monospace; }
+  .img-src-input:focus { outline: none; border-color: var(--blue); }
+  .image-panel { padding: 10px 16px; border-bottom: 1px solid var(--border); display: none; }
+  .image-panel.active { display: block; }
+  .image-title { font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; }
+  .image-name { font-size: 12px; font-family: monospace; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .image-gt { font-size: 11px; margin-bottom: 8px; }
+  .image-gt .gt-label { font-weight: 500; }
+  .image-controls { display: flex; gap: 6px; align-items: center; }
+  .btn-img { background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+              padding: 5px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; }
+  .btn-img:hover { background: var(--surface); }
+  .img-progress { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .img-bar-wrap { background: var(--border); border-radius: 3px; height: 4px; margin-top: 8px; overflow: hidden; }
+  .img-bar { height: 100%; background: var(--blue); border-radius: 3px; transition: width .3s; }
+
+  /* Main layout */
+  .main { display: flex; flex: 1; overflow: hidden; gap: 0; }
+
+  /* Video panel */
+  .video-panel { flex: 1; position: relative; background: #000; display: flex;
+                  align-items: center; justify-content: center; overflow: hidden; }
+  #videoCanvas { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .video-overlay { position: absolute; top: 12px; left: 12px; }
+  .cam-badge { background: rgba(165,45,45,.85); color: #fff; font-size: 11px;
+               font-weight: 600; padding: 3px 8px; border-radius: 4px; letter-spacing: .05em; }
+  .cam-badge.live { background: rgba(29,158,117,.85); }
+  .no-signal { color: var(--muted); font-size: 13px; text-align: center; }
+
+  /* Right panel */
+  .right-panel { width: 320px; min-width: 280px; background: var(--surface);
+                  border-left: 1px solid var(--border); display: flex;
+                  flex-direction: column; overflow: hidden; flex-shrink: 0; }
+
+  /* State badge */
+  .state-block { padding: 16px; border-bottom: 1px solid var(--border); }
+  .state-label { font-size: 11px; color: var(--muted); text-transform: uppercase;
+                  letter-spacing: .08em; margin-bottom: 8px; }
+  .state-badge { display: inline-block; font-size: 13px; font-weight: 600;
+                  padding: 6px 14px; border-radius: 20px; transition: background .3s, color .3s; }
+
+  /* Posture display */
+  .posture-block { padding: 16px; border-bottom: 1px solid var(--border); }
+  .posture-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .posture-icon { font-size: 36px; line-height: 1; width: 44px; text-align: center; }
+  .posture-name { font-size: 22px; font-weight: 600; text-transform: capitalize; }
+  .conf-row { display: flex; align-items: center; gap: 8px; }
+  .conf-label { font-size: 12px; color: var(--muted); width: 80px; }
+  .conf-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
+  .conf-bar { height: 100%; border-radius: 4px; transition: width .4s ease, background .3s; }
+  .conf-pct { font-size: 13px; font-weight: 500; min-width: 36px; text-align: right; }
+  .consecutive-row { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .frame-dots { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 4px; }
+  .frame-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background .2s; }
+  .frame-dot.filled { background: var(--amber); }
+
+  /* Countdown block */
+  .countdown-block { padding: 16px; border-bottom: 1px solid var(--border); display: none; }
+  .countdown-block.active { display: block; }
+  .countdown-title { font-size: 12px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em; }
+  .countdown-ring-wrap { display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .countdown-svg { transform: rotate(-90deg); }
+  .countdown-track { fill: none; stroke: var(--surface2); stroke-width: 6; }
+  .countdown-progress { fill: none; stroke: var(--blue); stroke-width: 6; stroke-linecap: round;
+                         stroke-dasharray: 188; transition: stroke-dashoffset .1s linear; }
+  .countdown-text { position: absolute; font-size: 22px; font-weight: 600; }
+  .countdown-ring-inner { position: relative; display: flex; align-items: center; justify-content: center; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid var(--border);
+          font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s, opacity .15s; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-cancel { background: rgba(163,45,45,.2); border-color: #a32d2d; color: #f09595; }
+  .btn-cancel:hover:not(:disabled) { background: rgba(163,45,45,.4); }
+  .btn-now { background: rgba(24,95,165,.2); border-color: var(--blue); color: #85b7eb; }
+  .btn-now:hover:not(:disabled) { background: rgba(24,95,165,.4); }
+
+  /* Cooldown block */
+  .cooldown-block { padding: 12px 16px; border-bottom: 1px solid var(--border);
+                    font-size: 12px; color: var(--muted); display: none; }
+  .cooldown-block.active { display: flex; align-items: center; gap: 8px; }
+  .cooldown-bar-wrap { flex: 1; background: var(--surface2); border-radius: 3px; height: 4px; }
+  .cooldown-bar { height: 100%; border-radius: 3px; background: #534AB7; transition: width .5s linear; }
+
+  /* Metrics */
+  .metrics-block { padding: 12px 16px; border-bottom: 1px solid var(--border);
+                    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
+  .metric { background: var(--surface2); border-radius: 6px; padding: 8px 10px; }
+  .metric-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+  .metric-value { font-size: 13px; font-weight: 500; }
+
+  /* Reasoning */
+  .reasoning-block { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .reasoning-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+  .reasoning-text { font-size: 12px; color: var(--muted); line-height: 1.5; font-style: italic; }
+
+  /* History log */
+  .history-block { flex: 1; overflow-y: auto; padding: 0; }
+  .history-header { padding: 10px 16px 6px; font-size: 10px; color: var(--muted);
+                    text-transform: uppercase; letter-spacing: .06em;
+                    position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .history-item { display: flex; align-items: center; gap: 8px; padding: 7px 16px;
+                   border-bottom: 1px solid var(--border); transition: background .15s; }
+  .history-item:hover { background: var(--surface2); }
+  .hist-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .hist-posture { font-size: 12px; font-weight: 500; min-width: 60px; text-transform: capitalize; }
+  .hist-conf { font-size: 11px; color: var(--muted); min-width: 36px; }
+  .hist-lat { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .hist-state { font-size: 10px; color: var(--muted); }
+
+  /* Error overlay */
+  .error-banner { background: rgba(163,45,45,.15); border: 1px solid #a32d2d;
+                   border-radius: 6px; margin: 12px; padding: 10px 12px; display: none; }
+  .error-banner.active { display: block; }
+  .error-msg { font-size: 12px; color: #f09595; margin-bottom: 8px; }
+  .btn-clear { background: rgba(163,45,45,.2); border: 1px solid #a32d2d; color: #f09595;
+                padding: 5px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; }
+
+  /* Connection indicator */
+  .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gray); }
+  .conn-dot.connected { background: var(--teal); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="conn-dot" id="connDot"></div>
+  <div>
+    <div class="header-title">PDSDA — Posture Detection System</div>
+    <div class="header-sub">Robotics &amp; Intelligent Autonomous Systems · MEng Capstone</div>
+  </div>
+  <div class="header-spacer"></div>
+  <select class="approach-select" id="cameraSelect" onchange="setCamera(this.value)" title="Select camera">
+    <option value="0">Camera 0 — loading…</option>
+  </select>
+  <button class="btn-run" id="srcCamBtn"  onclick="switchToCamera()" title="Live camera">📷 Camera</button>
+  <button class="btn-run" id="srcImgBtn"  onclick="showImageSource()" title="Load images">🖼 Images</button>
+  <select class="approach-select" id="modelSelect" onchange="setModel(this.value)" title="Select model">
+    <option value="">Loading models…</option>
+  </select>
+  <button class="btn-run" id="runBtn" onclick="togglePause()">⏸ Pause</button>
+  <div class="log-badge" id="logBadge">log: initialising…</div>
+</div>
+<div class="img-src-row" id="imgSrcRow">
+  <span style="font-size:12px;white-space:nowrap;color:var(--muted)">Images path:</span>
+  <input class="img-src-input" id="imgSrcInput" type="text"
+         placeholder="/path/to/test_images  or  ./test_images/sitting_001.jpg"
+         onkeydown="if(event.key==='Enter') loadImages()"/>
+  <button class="btn-test" onclick="loadImages()">Load</button>
+  <button class="btn-test" onclick="document.getElementById('imgSrcRow').classList.remove('open')">&#x2715;</button>
+</div>
+
+<div class="main">
+
+  <!-- Video panel -->
+  <div class="video-panel">
+    <canvas id="videoCanvas" width="800" height="450"></canvas>
+    <div class="video-overlay">
+      <span class="cam-badge" id="camBadge">NO SIGNAL</span>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="right-panel">
+
+    <!-- State -->
+    <div class="state-block">
+      <div class="state-label">System state</div>
+      <span class="state-badge" id="stateBadge" style="background:#2A3A4A;color:#7B8FA1">Idle</span>
+    </div>
+
+    <!-- Error banner -->
+    <div class="error-banner" id="errorBanner">
+      <div class="error-msg" id="errorMsg"></div>
+      <button class="btn-clear" onclick="clearError()">Clear error</button>
+    </div>
+
+    <!-- Current posture -->
+    <div class="posture-block">
+      <div class="posture-row">
+        <div class="posture-icon" id="postureIcon">❓</div>
+        <div>
+          <div class="posture-name" id="postureName">unknown</div>
+        </div>
+      </div>
+      <div class="conf-row">
+        <span class="conf-label">Confidence</span>
+        <div class="conf-bar-wrap"><div class="conf-bar" id="confBar" style="width:0%"></div></div>
+        <span class="conf-pct" id="confPct">—</span>
+      </div>
+      <div class="consecutive-row" id="consecutiveRow" style="display:none">
+        Confirming: <span class="frame-dots" id="frameDots"></span>
+        <span id="consecutiveText"></span>
+      </div>
+    </div>
+
+    <!-- Countdown -->
+    <div class="countdown-block" id="countdownBlock">
+      <div class="countdown-title">Desk will adjust in…</div>
+      <div class="countdown-ring-inner" style="height:90px">
+        <svg class="countdown-svg" width="80" height="80" viewBox="0 0 80 80">
+          <circle class="countdown-track" cx="40" cy="40" r="30"/>
+          <circle class="countdown-progress" id="countdownArc" cx="40" cy="40" r="30"/>
+        </svg>
+        <span class="countdown-text" id="countdownNum">10</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-cancel" onclick="sendAction('cancel')">✕ Cancel</button>
+        <button class="btn btn-now" onclick="sendAction('confirm_now')">Adjust now</button>
+      </div>
+    </div>
+
+    <!-- Cooldown -->
+    <div class="cooldown-block" id="cooldownBlock">
+      <span>Cooldown</span>
+      <div class="cooldown-bar-wrap"><div class="cooldown-bar" id="cooldownBar" style="width:100%"></div></div>
+      <span id="cooldownNum">60s</span>
+    </div>
+
+    <!-- Latency stats -->
+    <div class="metrics-block">
+      <div class="metric">
+        <div class="metric-label">Current</div>
+        <div class="metric-value" id="metricCurrent">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Mean (30)</div>
+        <div class="metric-value" id="metricMean">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Min</div>
+        <div class="metric-value" id="metricMin">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Max</div>
+        <div class="metric-value" id="metricMax">—</div>
+      </div>
+    </div>
+
+    <!-- Latency sparkline -->
+    <div style="padding:6px 16px 10px;border-bottom:1px solid var(--border)">
+      <div class="metric-label" style="margin-bottom:5px">Latency history</div>
+      <canvas id="latencyChart" width="288" height="44" style="width:100%;height:44px;display:block"></canvas>
+    </div>
+
+    <!-- Reasoning -->
+    <div class="reasoning-block">
+      <div class="reasoning-label">Model reasoning</div>
+      <div class="reasoning-text" id="reasoningText">—</div>
+    </div>
+
+    <!-- History -->
+    <div class="history-block">
+      <div class="history-header">Recent detections</div>
+      <div id="historyList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// -----------------------------------------------------------
+// WebSocket connection
+// -----------------------------------------------------------
+let ws = null;
+let reconnectTimer = null;
+let _countdownMax = 10;
+
+const POSTURE_ICONS  = { sitting: '🪑', standing: '🧍', absent: '🚫', unknown: '❓' };
+const POSTURE_COLORS = { sitting: '#1D9E75', standing: '#639922', absent: '#888780', unknown: '#888780' };
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+
+  ws.onopen = () => {
+    document.getElementById('connDot').classList.add('connected');
+    document.getElementById('camBadge').textContent = 'LIVE';
+    document.getElementById('camBadge').classList.add('live');
+    clearTimeout(reconnectTimer);
+  };
+
+  ws.onclose = () => {
+    document.getElementById('connDot').classList.remove('connected');
+    document.getElementById('camBadge').textContent = 'RECONNECTING…';
+    document.getElementById('camBadge').classList.remove('live');
+    reconnectTimer = setTimeout(connect, 2000);
+  };
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'frame')     renderFrame(msg.data);
+    if (msg.type === 'detection') renderDetection(msg.result, msg.state, msg.history, msg);
+  };
+}
+
+// -----------------------------------------------------------
+// Render video frame
+// -----------------------------------------------------------
+const canvas = document.getElementById('videoCanvas');
+const ctx = canvas.getContext('2d');
+const img = new Image();
+img.onload = () => {
+  canvas.width  = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  ctx.drawImage(img, 0, 0);
+};
+function renderFrame(b64) {
+  img.src = 'data:image/jpeg;base64,' + b64;
+}
+
+// -----------------------------------------------------------
+// Render detection state
+// -----------------------------------------------------------
+function renderDetection(result, state, history, msg) {
+  const posture = result.posture || 'unknown';
+  const conf    = result.confidence || 0;
+  const color   = POSTURE_COLORS[posture] || '#888';
+
+  // Posture
+  document.getElementById('postureIcon').textContent  = POSTURE_ICONS[posture] || '❓';
+  document.getElementById('postureName').textContent  = posture;
+  document.getElementById('postureName').style.color  = color;
+
+  // Confidence bar
+  document.getElementById('confBar').style.width      = (conf * 100).toFixed(0) + '%';
+  document.getElementById('confBar').style.background = color;
+  document.getElementById('confPct').textContent      = (conf * 100).toFixed(0) + '%';
+
+  // Latency stats
+  if (msg.latency) renderLatency(msg.latency);
+  // Image player progress
+  if (msg.image_mode) renderImageProgress(msg.image_progress);
+
+  // Reasoning
+  document.getElementById('reasoningText').textContent = result.reasoning || '—';
+
+  // State badge + paused
+  renderState(state, msg && msg.paused);
+  updateRunBtn(msg && msg.paused);
+  if (msg && msg.source_type) updateSourceButtons(msg.source_type);
+
+  // History
+  renderHistory(history || []);
+}
+
+function renderState(state, paused) {
+  const badge      = document.getElementById('stateBadge');
+  const label      = state.state_label || state.system_state;
+  const color      = state.state_color || '#888';
+  const sysState   = state.system_state;
+
+  badge.textContent   = label;
+  badge.style.background = color + '33';
+  badge.style.color      = color;
+  badge.style.border     = `1px solid ${color}55`;
+
+  // Consecutive frame dots (TRANSITION_PENDING)
+  const consRow = document.getElementById('consecutiveRow');
+  if (sysState === 'transition_pending' && state.consecutive_frames > 0) {
+    consRow.style.display = 'block';
+    const dots = document.getElementById('frameDots');
+    dots.innerHTML = '';
+    const threshold = 5;
+    for (let i = 0; i < threshold; i++) {
+      const d = document.createElement('span');
+      d.className = 'frame-dot' + (i < state.consecutive_frames ? ' filled' : '');
+      dots.appendChild(d);
+    }
+    document.getElementById('consecutiveText').textContent =
+      ` ${state.consecutive_frames}/5 frames`;
+  } else {
+    consRow.style.display = 'none';
+  }
+
+  // Countdown block
+  const cdBlock = document.getElementById('countdownBlock');
+  if (sysState === 'signaling') {
+    cdBlock.classList.add('active');
+    const remaining = state.countdown_remaining || 0;
+    _countdownMax = _countdownMax || 10;
+    const pct   = remaining / _countdownMax;
+    const circ  = 188;
+    document.getElementById('countdownArc').style.strokeDashoffset = circ * (1 - pct);
+    document.getElementById('countdownNum').textContent = remaining.toFixed(1);
+  } else {
+    cdBlock.classList.remove('active');
+    if (sysState !== 'transition_pending') {
+      // Reset countdown arc
+      document.getElementById('countdownArc').style.strokeDashoffset = 0;
+    }
+  }
+
+  // Cooldown block
+  const clBlock = document.getElementById('cooldownBlock');
+  if (sysState === 'cooldown') {
+    clBlock.classList.add('active');
+    const remaining = state.cooldown_remaining || 0;
+    const pct = remaining / 60;
+    document.getElementById('cooldownBar').style.width = (pct * 100).toFixed(0) + '%';
+    document.getElementById('cooldownNum').textContent = remaining.toFixed(0) + 's';
+  } else {
+    clBlock.classList.remove('active');
+  }
+
+  // Error banner
+  const errBanner = document.getElementById('errorBanner');
+  if (sysState === 'error') {
+    errBanner.classList.add('active');
+    document.getElementById('errorMsg').textContent = state.last_error || 'Unknown error';
+  } else {
+    errBanner.classList.remove('active');
+  }
+}
+
+function renderHistory(history) {
+  const list = document.getElementById('historyList');
+  list.innerHTML = history.map(h => {
+    const color = POSTURE_COLORS[h.posture] || '#888';
+    const conf  = ((h.confidence || 0) * 100).toFixed(0);
+    const lat   = h.latency_ms ? h.latency_ms.toFixed(0) + 'ms' : '—';
+    return `<div class="history-item">
+      <span class="hist-dot" style="background:${color}"></span>
+      <span class="hist-posture" style="color:${color}">${h.posture}</span>
+      <span class="hist-conf">${conf}%</span>
+      <span class="hist-lat">${lat}</span>
+    </div>`;
+  }).join('');
+}
+
+// -----------------------------------------------------------
+// Controls
+// -----------------------------------------------------------
+function sendAction(action, extra) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ action, ...extra }));
+  }
+}
+function setApproach(value) { sendAction('set_approach', { approach: value }); }
+function setCamera(value) { sendAction('set_camera', { device_id: parseInt(value) }); }
+function refreshCameras() {
+  // Re-fetch camera list (handles Linux re-enumeration after USB replug)
+  fetch('/api/cameras').then(r => r.json()).then(camData => {
+    const camSelect = document.getElementById('cameraSelect');
+    if (camData.cameras && camData.cameras.length > 0) {
+      camSelect.innerHTML = camData.cameras.map(c => {
+        const isExpected = camData.last_camera_name && c.label === camData.last_camera_name;
+        const suffix = isExpected ? ' ← reconnect here' : '';
+        return `<option value="${c.id}">${c.label}${suffix}</option>`;
+      }).join('');
+      if (camData.last_camera_name) {
+        const match = camData.cameras.find(c => c.label === camData.last_camera_name);
+        if (match) { camSelect.value = String(match.id); }
+      }
+    }
+  });
+}
+function setModel(value)  { if (value) sendAction('set_model', { model_id: value }); }
+
+// Source switching
+function switchToCamera() {
+  const camId = parseInt(document.getElementById('cameraSelect').value || '0');
+  sendAction('set_source', { source_type: 'camera', value: camId });
+  document.getElementById('imgSrcRow').classList.remove('open');
+  updateSourceButtons('camera');
+}
+
+function showImageSource() {
+  document.getElementById('imgSrcRow').classList.toggle('open');
+}
+
+function loadImages() {
+  const path = document.getElementById('imgSrcInput').value.trim();
+  if (!path) return;
+  sendAction('set_source', { source_type: 'images', value: path });
+  document.getElementById('imgSrcRow').classList.remove('open');
+  updateSourceButtons('images');
+}
+
+function updateSourceButtons(sourceType) {
+  const camBtn = document.getElementById('srcCamBtn');
+  const imgBtn = document.getElementById('srcImgBtn');
+  if (!camBtn || !imgBtn) return;
+  camBtn.classList.toggle('paused', sourceType === 'camera');
+  imgBtn.classList.toggle('paused', sourceType === 'images');
+}
+
+let _isPaused = false;
+function togglePause() {
+  _isPaused ? sendAction('resume') : sendAction('pause');
+}
+function updateRunBtn(paused) {
+  _isPaused = !!paused;
+  const btn = document.getElementById('runBtn');
+  if (!btn) return;
+  btn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+  btn.classList.toggle('paused', !!paused);
+}
+
+function renderLatency(lat) {
+  const fmt = v => v != null ? v + ' ms' : '—';
+  document.getElementById('metricCurrent').textContent = fmt(lat.current);
+  document.getElementById('metricMean').textContent    = fmt(lat.mean);
+  document.getElementById('metricMin').textContent     = fmt(lat.min);
+  document.getElementById('metricMax').textContent     = fmt(lat.max);
+  if (lat.history && lat.history.length > 1) drawSparkline(lat.history, lat.max);
+}
+
+function renderImageProgress(prog) {
+  const panel = document.getElementById('imagePanel');
+  if (!prog) { panel.classList.remove('active'); return; }
+  panel.classList.add('active');
+  document.getElementById('imgName').textContent    = prog.name || '—';
+  const gt = prog.ground_truth || 'unknown';
+  const gtEl = document.getElementById('imgGT');
+  gtEl.textContent = gt;
+  gtEl.style.color = gt === 'unknown' ? 'var(--muted)' :
+                     gt === 'sitting'  ? 'var(--blue)' :
+                     gt === 'standing' ? 'var(--teal)' : 'var(--muted)';
+  document.getElementById('imgProgress').textContent = `${prog.index} / ${prog.total}`;
+  const pct = prog.total > 0 ? (prog.index / prog.total * 100).toFixed(1) : 0;
+  document.getElementById('imgBar').style.width = pct + '%';
+}
+
+function drawSparkline(history, maxVal) {
+  const canvas = document.getElementById('latencyChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const top = maxVal || 3000;
+  const barW = Math.max(2, Math.floor((W - 2) / history.length) - 1);
+  const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  history.forEach((v, i) => {
+    const x = i * (barW + 1) + 1;
+    const h = Math.max(2, Math.round((v / top) * (H - 4)));
+    const pct = v / top;
+    ctx.fillStyle = pct > 0.8 ? '#E24B4A' : pct > 0.5 ? '#BA7517' : '#1D9E75';
+    ctx.fillRect(x, H - h - 2, barW, h);
+  });
+}
+function clearError() { sendAction('clear_error'); }
+
+async function testHost() {
+  const host = document.getElementById('hostInput').value.trim();
+  if (!host) return;
+  const btn = document.getElementById('testBtn');
+  btn.textContent = 'Testing…';
+  btn.className = 'btn-test';
+  try {
+    const r = await fetch(`/api/ping_host?host=${encodeURIComponent(host)}`);
+    const d = await r.json();
+    if (d.ok) {
+      btn.textContent = `OK (${d.count} model${d.count!==1?'s':''})`;
+      btn.className = 'btn-test ok';
+      const models = d.models.join(', ');
+      document.getElementById('hostModels').textContent = models ? 'Available: ' + models : 'No models found — run: ollama pull gemma4:e4b';
+    } else {
+      btn.textContent = 'Failed';
+      btn.className = 'btn-test fail';
+      document.getElementById('hostModels').textContent = d.error || 'Could not reach Ollama at this address';
+    }
+  } catch(e) {
+    btn.textContent = 'Error';
+    btn.className = 'btn-test fail';
+  }
+}
+
+function applyHost() {
+  const host = document.getElementById('hostInput').value.trim();
+  if (host) {
+    sendAction('set_ollama_host', { host });
+    setTimeout(() => { fetch('/api/models').then(r=>r.json()).then(d=>{
+      const sel = document.getElementById('modelSelect');
+      if (d.models && d.models.length > 0) {
+        sel.innerHTML = d.models.map(m=>`<option value="${m.id}">${m.label}</option>`).join('');
+      }
+    }); }, 800);
+  }
+}
+
+// Keyboard shortcut: Esc = cancel
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') sendAction('cancel');
+});
+
+// -----------------------------------------------------------
+// Init
+// -----------------------------------------------------------
+async function init() {
+  // Fetch cameras
+  try {
+    const camData = await fetch('/api/cameras').then(r => r.json());
+    const camSelect = document.getElementById('cameraSelect');
+    if (camData.cameras && camData.cameras.length > 0) {
+      camSelect.innerHTML = camData.cameras.map(c => {
+        const isExpected = camData.last_camera_name && c.label === camData.last_camera_name;
+        return `<option value="${c.id}">${c.label}${isExpected ? ' ← reconnect here' : ''}</option>`;
+      }).join('');
+      if (camData.last_camera_name) {
+        const match = camData.cameras.find(c => c.label === camData.last_camera_name);
+        if (match) camSelect.value = String(match.id);
+      }
+    } else {
+      camSelect.innerHTML = '<option value="0">Camera 0 (default)</option>';   }
+  } catch {}
+
+  // Fetch models
+  try {
+    const modData = await fetch('/api/models').then(r => r.json());
+    const modSelect = document.getElementById('modelSelect');
+    if (modData.models && modData.models.length > 0) {
+      modSelect.innerHTML = modData.models.map(m =>
+        `<option value="${m.id}" ${m.id === modData.active ? 'selected' : ''}>${m.label}</option>`
+      ).join('');
+    }
+  } catch {}
+
+  // Fetch status for log path, approach, and current camera
+  try {
+    const resp = await fetch('/api/status');
+    const data = await resp.json();
+    if (data.log_path) {
+      document.getElementById('logBadge').textContent = 'log: ' + data.log_path.split('/').pop();
+    }
+    if (data.approach) {
+      document.getElementById('approachSelect').value = data.approach;
+    }
+    if (data.camera_id !== undefined) {
+      document.getElementById('cameraSelect').value = String(data.camera_id);
+    }
+    if (data.image_mode) renderImageProgress(data.image_progress);
+    if (data.ollama_host) {
+      const h = data.ollama_host.replace('http://','').replace('https://','');
+      document.getElementById('hostInput').value = h;
+    }
+  } catch {}
+  connect();
+}
+init();
+</script>
+</body>
+</html>    <!-- Image player panel (active only in --images mode) -->
+    <div class="image-panel" id="imagePanel">
+      <div class="image-title">Image player</div>
+      <div class="image-name" id="imgName">-</div>
+      <div class="image-gt">Ground truth: <span class="gt-label" id="imgGT">-</span></div>
+      <div class="image-controls">
+        <button class="btn-img" onclick="sendAction('prev_image')">&larr; Prev</button>
+        <button class="btn-img" onclick="sendAction('next_image')">Next &rarr;</button>
+        <span class="img-progress" id="imgProgress">- / -</span>
+      </div>
+      <div class="img-bar-wrap"><div class="img-bar" id="imgBar" style="width:0%"></div></div>
+    </div>
+    

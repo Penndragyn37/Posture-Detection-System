@@ -1,0 +1,3 @@
+image_name,split,ground_truth,claude_pred,gemma4_pred,category,evidence
+standing_session01_L1_B2_mid_0159_00001_.png,dev,standing,absent,absent,1-confirmed_bad_label,"VISUALLY CONFIRMED: man kneeling on floor, hands on knees. Not standing. Label is wrong."
+standing_session01_L2_B1_mid_0177_00001_.png,dev,standing,absent,absent,1-confirmed_bad_label,VISUALLY CONFIRMED: woman kneeling on floor against wall. Not standing. Label is wrong.

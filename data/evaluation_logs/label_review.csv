@@ -1,0 +1,20 @@
+image_name,split,ground_truth,claude_pred,gemma4_pred,category,evidence
+standing_session01_L1_B2_mid_0159_00001_.png,dev,standing,absent,absent,1-confirmed_bad_label,"VISUALLY CONFIRMED: man kneeling on floor, hands on knees. Not standing. Label is wrong."
+standing_session01_L2_B1_mid_0177_00001_.png,dev,standing,absent,absent,1-confirmed_bad_label,VISUALLY CONFIRMED: woman kneeling on floor against wall. Not standing. Label is wrong.
+standing_session01_L2_B2_far_0030.jpg,test,standing,sitting,sitting,5-inconclusive_keep_as_error,VISUALLY REVIEWED: ambiguous due to desk occlusion of lower body; could genuinely be standing. NOT excluded from metrics.
+standing_session01_L1_B1_mid_0135_00001_.png,dev,standing,absent,standing,3-claude_error,Claude over-applied floor-kneeling edge case; Gemma4 correctly said standing
+sitting_session01_L4_B3_mid_0069_00001_.png,test,sitting,absent,sitting,6-taxonomy_gap,"VISUALLY CONFIRMED: woman sitting upright on floor, legs extended, not in a chair. WP1.2 protocol explicitly excludes floor-sitting from SITTING class. Genuine taxonomy gap, not a simple label error. Document in Discussion/Limitations, do not exclude from metrics."
+absent_session01_L1_B2_mid_0010_00001_.png,test,absent,absent,sitting,2-gemma4_error,"VISUALLY CONFIRMED: completely empty room, no person. Gemma4 hallucinated a seated person. Genuine Gemma4 error, Claude correct."
+standing_session01_L1_B2_near_0007.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L1_B2_near_0008.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L1_B2_near_0148_00001_.png,dev,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L1_B3_near_0013.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L2_B2_mid_0027.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L2_B2_near_0025.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L2_B2_near_0190_00001_.png,dev,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L3_B1_far_0042.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L3_B1_mid_0040.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L3_B1_near_0214_00001_.png,dev,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L3_B2_mid_0045.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L3_B2_mid_0046.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
+standing_session01_L3_B3_near_0049.jpg,test,standing,standing,sitting,2-gemma4_error,Claude correctly said standing; Gemma4 systematically misreads standing-near-desk as sitting
